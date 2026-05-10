@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>CRUD Usuarios</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+<div id="app">
+
+    <h1>CRUD de Usuarios</h1>
+
+    <h2>Crear Usuario</h2>
+
+    <input type="text" v-model="nombre" placeholder="Nombre">
+    <input type="text" v-model="apellido" placeholder="Apellido">
+    <input type="email" v-model="email" placeholder="Email">
+    <input type="password" v-model="clave" placeholder="Clave">
+
+    <button @click="crearUsuario">Guardar</button>
+
+    <hr>
+
+    <h2>Lista de Usuarios</h2>
+
+    <button @click="consultarUsuarios">Consultar Usuarios</button>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Email</th>
+            <th>Eliminar</th>
+        </tr>
+
+        <tr v-for="usuario in usuarios" :key="usuario.id">
+            <td>{{ usuario.id }}</td>
+            <td>{{ usuario.nombre }}</td>
+            <td>{{ usuario.apellido }}</td>
+            <td>{{ usuario.email }}</td>
+            <td>
+                <button @click="eliminarUsuario(usuario.id)">
+                    Eliminar
+                </button>
+            </td>
+        </tr>
+    </table>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
