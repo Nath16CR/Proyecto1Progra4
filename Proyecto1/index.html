@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UserPanel · CRUD Usuarios</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div id="app" :class="{ 'modal-open': showModal || showEditModal }">
+
+  <!-- Background decorativo -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">UserPanel</span>
+      </div>
+      <div class="header-meta">
+        <span class="badge-live">
+          <span class="dot"></span>
+          {{ usuarios.length }} usuarios activos
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notificación toast -->
+  <transition name="toast">
+    <div v-if="toast.visible" :class="['toast', toast.type]">
+      <span class="toast-icon">{{ toast.type === 'success' ? '✓' : '✕' }}</span>
+      <span>{{ toast.message }}</span>
+    </div>
+  </transition>
+
+  <!-- Main layout -->
+  <main class="main">
+
+    <!-- Panel izquierdo: Crear usuario -->
+    <aside class="panel panel-create">
+      <div class="panel-header">
+        <h2 class="panel-title">Nuevo usuario</h2>
+        <p class="panel-sub">Completa los campos para registrar</p>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre</label>
+        <input
+          v-model="form.nombre"
+          type="text"
+          placeholder="Ej: María"
+          :class="{ 'input-error': errors.nombre }"
+          @input="errors.nombre = ''"
+        />
+        <span class="field-error" v-if="errors.nombre">{{ errors.nombre }}</span>
+      </div>
+
+      <div class="form-group">
+        <label>Apellido</label>
+        <input
+          v-model="form.apellido"
+          type="text"
+          placeholder="Ej: González"
+          :class="{ 'input-error': errors.apellido }"
+          @input="errors.apellido = ''"
+        />
+        <span class="field-error" v-if="errors.apellido">{{ errors.apellido }}</span>
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input
+          v-model="form.email"
+          type="email"
+          placeholder="usuario@correo.com"
+          :class="{ 'input-error': errors.email }"
+          @input="errors.email = ''"
+        />
+        <span class="field-error" v-if="errors.email">{{ errors.email }}</span>
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña</label>
+        <div class="input-pass-wrap">
+          <input
+            v-model="form.clave"
+            :type="showPass ? 'text' : 'password'"
+            placeholder="Mínimo 6 caracteres"
+            :class="{ 'input-error': errors.clave }"
+            @input="errors.clave = ''"
+          />
+          <button class="toggle-pass" @click="showPass = !showPass" type="button">
+            {{ showPass ? '🙈' : '👁' }}
+          </button>
+        </div>
+        <span class="field-error" v-if="errors.clave">{{ errors.clave }}</span>
+      </div>
+
+      <div class="form-group">
+        <label>Rol</label>
+        <select v-model="form.rol">
+          <option value="usuario">👤 Usuario</option>
+          <option value="admin">🛡️ Administrador</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" @click="crearUsuario" :disabled="loading">
+        <span v-if="!loading">
+          <span class="btn-icon">+</span> Crear usuario
+        </span>
+        <span v-else class="spinner-sm"></span>
+      </button>
+    </aside>
+
+    <!-- Panel derecho: lista de usuarios -->
+    <section class="panel panel-list">
+      <div class="list-header">
+        <div>
+          <h2 class="panel-title">Directorio</h2>
+          <p class="panel-sub">Gestiona todos los usuarios registrados</p>
+        </div>
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input v-model="busqueda" type="text" placeholder="Buscar..." class="search-input"/>
+        </div>
+      </div>
+
+      <!-- Estado vacío -->
+      <div v-if="!loading && usuariosFiltrados.length === 0" class="empty-state">
+        <div class="empty-icon">◎</div>
+        <p>No hay usuarios que mostrar</p>
+        <span>Crea el primero usando el formulario</span>
+      </div>
+
+      <!-- Loader -->
+      <div v-if="loading && usuarios.length === 0" class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando usuarios...</p>
+      </div>
+
+      <!-- Cards grid -->
+      <div class="users-grid" v-if="!loading || usuarios.length > 0">
+        <div
+          v-for="(usuario, index) in usuariosFiltrados"
+          :key="usuario.id"
+          class="user-card"
+          :style="{ animationDelay: index * 60 + 'ms' }"
+        >
+          <div class="card-top">
+            <div class="avatar" :style="{ background: getColor(usuario.nombre) }">
+              {{ getInitials(usuario.nombre, usuario.apellido) }}
+            </div>
+            <div class="card-info">
+              <h3>{{ usuario.nombre }} {{ usuario.apellido }}</h3>
+              <span class="card-email">{{ usuario.email }}</span>
+            </div>
+            <span :class="['role-badge', usuario.rol === 'admin' ? 'role-admin' : 'role-user']">
+              {{ usuario.rol === 'admin' ? '🛡️ Admin' : '👤 Usuario' }}
+            </span>
+          </div>
+          <div class="card-bottom">
+            <span class="card-date" v-if="usuario.created_at">
+              🗓 {{ formatDate(usuario.created_at) }}
+            </span>
+            <span class="card-id">#{{ usuario.id }}</span>
+            <div class="card-actions">
+              <button class="btn-edit" @click="abrirEditar(usuario)" title="Editar">✎</button>
+              <button class="btn-delete" @click="confirmarEliminar(usuario)" title="Eliminar">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Editar -->
+  <transition name="modal">
+    <div class="modal-overlay" v-if="showEditModal" @click.self="showEditModal = false">
+      <div class="modal-box">
+        <button class="modal-close" @click="showEditModal = false">✕</button>
+        <h3 class="modal-title">Editar usuario</h3>
+        <p class="modal-sub">Modifica los datos del usuario #{{ editForm.id }}</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input v-model="editForm.nombre" type="text" placeholder="Nombre"/>
+          </div>
+          <div class="form-group">
+            <label>Apellido</label>
+            <input v-model="editForm.apellido" type="text" placeholder="Apellido"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input v-model="editForm.email" type="email" placeholder="Email"/>
+        </div>
+
+        <div class="form-group">
+          <label>Nueva contraseña <span class="optional">(opcional)</span></label>
+          <input v-model="editForm.clave" type="password" placeholder="Dejar vacío para no cambiar"/>
+        </div>
+
+        <div class="form-group">
+          <label>Rol</label>
+          <select v-model="editForm.rol">
+            <option value="usuario">👤 Usuario</option>
+            <option value="admin">🛡️ Administrador</option>
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="showEditModal = false">Cancelar</button>
+          <button class="btn-primary" @click="actualizarUsuario" :disabled="loadingEdit">
+            <span v-if="!loadingEdit">Guardar cambios</span>
+            <span v-else class="spinner-sm"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <!-- Modal Confirmar Eliminar -->
+  <transition name="modal">
+    <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
+      <div class="modal-box modal-confirm">
+        <div class="confirm-icon">⚠</div>
+        <h3 class="modal-title">¿Eliminar usuario?</h3>
+        <p class="modal-sub">
+          Estás por eliminar a <strong>{{ usuarioAEliminar?.nombre }} {{ usuarioAEliminar?.apellido }}</strong>.
+          Esta acción no se puede deshacer.
+        </p>
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="showModal = false">Cancelar</button>
+          <button class="btn-danger" @click="eliminarUsuario" :disabled="loadingDelete">
+            <span v-if="!loadingDelete">Sí, eliminar</span>
+            <span v-else class="spinner-sm"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

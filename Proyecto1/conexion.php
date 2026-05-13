@@ -1,9 +1,8 @@
 <?php
-
 // Datos de conexión a la base de datos
-$servidor = "localhost";
+$servidor = "localhost:3307";
 $usuario = "root";
-$password = "626177"; // Cambien por su contraseña de MySQL
+$password = "51@Sqr9UgevyCjh"; // ← CORREGIDO: cerré la comilla
 $basedatos = "proy_crud";
 
 // Crear conexión
@@ -18,5 +17,4 @@ if ($conn->connect_error) {
 
 // Establecer charset UTF-8 para evitar problemas con caracteres especiales
 $conn->set_charset("utf8");
-
 ?>
