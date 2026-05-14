@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CREATE // CRUD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="pages.css"/>
+  <!-- Vue 3 desde CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Axios para hacer peticiones al backend PHP -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- Encabezado -->
+    <header class="page-header">
+      <button class="btn-back" onclick="window.close()">← Cerrar</button>
+      <h1 class="page-title"><span class="letter-c">C</span>REATE</h1>
+      <span class="page-info">Crear nuevo usuario</span>
+    </header>
+
+    <!-- Notificación (toast) -->
+    <div v-if="mensaje" :class="['toast', tipoMensaje]">
+      {{ mensaje }}
+    </div>
+
+    <!-- Formulario para crear usuario -->
+    <main class="container">
+      <form class="formulario" @submit.prevent="crearUsuario">
+        <h2>Registrar usuario</h2>
+
+        <!-- Campo: Nombre -->
+        <div class="campo">
+          <label>Nombre</label>
+          <input type="text" v-model="form.nombre" placeholder="Ej: María"/>
+          <span class="error" v-if="errores.nombre">{{ errores.nombre }}</span>
+        </div>
+
+        <!-- Campo: Apellido -->
+        <div class="campo">
+          <label>Apellido</label>
+          <input type="text" v-model="form.apellido" placeholder="Ej: González"/>
+          <span class="error" v-if="errores.apellido">{{ errores.apellido }}</span>
+        </div>
+
+        <!-- Campo: Email -->
+        <div class="campo">
+          <label>Email</label>
+          <input type="email" v-model="form.email" placeholder="usuario@correo.com"/>
+          <span class="error" v-if="errores.email">{{ errores.email }}</span>
+        </div>
+
+        <!-- Campo: Contraseña -->
+        <div class="campo">
+          <label>Contraseña</label>
+          <input type="password" v-model="form.clave" placeholder="Mínimo 6 caracteres"/>
+          <span class="error" v-if="errores.clave">{{ errores.clave }}</span>
+        </div>
+
+        <!-- Campo: Rol -->
+        <div class="campo">
+          <label>Rol</label>
+          <select v-model="form.rol">
+            <option value="usuario">Usuario</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-principal" :disabled="cargando">
+          {{ cargando ? 'Creando...' : 'Crear usuario' }}
+        </button>
+      </form>
+    </main>
+
+  </div>
+
+  <script>
+    // Creamos la aplicación de Vue 3
+    const { createApp } = Vue;
+
+    createApp({
+      // Datos reactivos (cuando cambian, la vista se actualiza sola)
+      data() {
+        return {
+          // Datos del formulario
+          form: {
+            nombre: '',
+            apellido: '',
+            email: '',
+            clave: '',
+            rol: 'usuario'
+          },
+          // Aquí se guardan los errores de validación por campo
+          errores: {},
+          // Estado de carga (para deshabilitar el botón mientras se envía)
+          cargando: false,
+          // Mensaje de notificación
+          mensaje: '',
+          tipoMensaje: 'exito'
+        };
+      },
+
+      methods: {
+        // Valida los datos antes de enviar al servidor
+        validar() {
+          this.errores = {};
+
+          if (!this.form.nombre.trim()) {
+            this.errores.nombre = 'El nombre es obligatorio';
+          }
+          if (!this.form.apellido.trim()) {
+            this.errores.apellido = 'El apellido es obligatorio';
+          }
+          if (!this.form.email.trim()) {
+            this.errores.email = 'El email es obligatorio';
+          } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) {
+            this.errores.email = 'Formato de email inválido';
+          }
+          if (!this.form.clave) {
+            this.errores.clave = 'La contraseña es obligatoria';
+          } else if (this.form.clave.length < 6) {
+            this.errores.clave = 'Mínimo 6 caracteres';
+          }
+
+          // Si no hay errores, retorna true
+          return Object.keys(this.errores).length === 0;
+        },
+
+        // Muestra una notificación durante 3 segundos
+        notificar(texto, tipo) {
+          this.mensaje = texto;
+          this.tipoMensaje = tipo;
+          setTimeout(() => { this.mensaje = ''; }, 3000);
+        },
+
+        // Envía los datos al backend PHP para crear el usuario
+        async crearUsuario() {
+          // Primero validamos
+          if (!this.validar()) return;
+
+          this.cargando = true;
+
+          try {
+            // Preparamos los datos en formato FormData
+            const datos = new FormData();
+            datos.append('nombre', this.form.nombre);
+            datos.append('apellido', this.form.apellido);
+            datos.append('email', this.form.email);
+            datos.append('clave', this.form.clave);
+            datos.append('rol', this.form.rol);
+
+            // Hacemos la petición POST al archivo crear.php
+            const respuesta = await axios.post('crear.php', datos);
+
+            // Si el backend respondió con un mensaje de éxito
+            if (respuesta.data.mensaje) {
+              this.notificar(respuesta.data.mensaje, 'exito');
+              // Limpiamos el formulario
+              this.form = { nombre: '', apellido: '', email: '', clave: '', rol: 'usuario' };
+            } else {
+              // Si hubo un error desde el servidor
+              this.notificar(respuesta.data.error, 'error');
+            }
+          } catch (error) {
+            this.notificar('Error al conectar con el servidor', 'error');
+            console.error(error);
+          }
+
+          this.cargando = false;
+        }
+      }
+    }).mount('#app');
+  </script>
+
+</body>
+</html>

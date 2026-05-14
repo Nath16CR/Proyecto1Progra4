@@ -3,257 +3,252 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>UserPanel · CRUD Usuarios</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <title>CRUD // SYSTEM</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-<div id="app" :class="{ 'modal-open': showModal || showEditModal }">
 
-  <!-- Background decorativo -->
-  <div class="bg-blobs">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-  </div>
+  <!-- Grid de fondo animada -->
+  <div class="cyber-grid"></div>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-inner">
-      <div class="logo">
-        <span class="logo-icon">⬡</span>
-        <span class="logo-text">UserPanel</span>
-      </div>
-      <div class="header-meta">
-        <span class="badge-live">
-          <span class="dot"></span>
-          {{ usuarios.length }} usuarios activos
-        </span>
-      </div>
+  <!-- Scanlines tipo monitor viejo -->
+  <div class="scanlines"></div>
+
+  <!-- Ruido CRT -->
+  <div class="noise"></div>
+
+  <!-- Header superior -->
+  <header class="cyber-header">
+    <div class="status-bar">
+      <span class="status-dot"></span>
+      <span class="status-text">SYS://CONNECTED</span>
+    </div>
+    <div class="terminal-line">
+      <span class="prompt">root@crud:~$</span>
+      <span class="typing">initiating database panel...</span>
+      <span class="cursor">_</span>
+    </div>
+    <div class="status-bar">
+      <span class="status-text">DB: proy_crud</span>
+      <span class="status-dot online"></span>
     </div>
   </header>
 
-  <!-- Notificación toast -->
-  <transition name="toast">
-    <div v-if="toast.visible" :class="['toast', toast.type]">
-      <span class="toast-icon">{{ toast.type === 'success' ? '✓' : '✕' }}</span>
-      <span>{{ toast.message }}</span>
+  <!-- Contenedor principal -->
+  <main class="main-container">
+
+    <!-- Subtítulo -->
+    <div class="sub-title">
+      <span class="bracket">[</span>
+      <span class="sub-text">SELECT OPERATION</span>
+      <span class="bracket">]</span>
     </div>
-  </transition>
 
-  <!-- Main layout -->
-  <main class="main">
+    <!-- LAS 4 LETRAS GIGANTES C R U D -->
+    <div class="crud-letters">
 
-    <!-- Panel izquierdo: Crear usuario -->
-    <aside class="panel panel-create">
-      <div class="panel-header">
-        <h2 class="panel-title">Nuevo usuario</h2>
-        <p class="panel-sub">Completa los campos para registrar</p>
-      </div>
-
-      <div class="form-group">
-        <label>Nombre</label>
-        <input
-          v-model="form.nombre"
-          type="text"
-          placeholder="Ej: María"
-          :class="{ 'input-error': errors.nombre }"
-          @input="errors.nombre = ''"
-        />
-        <span class="field-error" v-if="errors.nombre">{{ errors.nombre }}</span>
-      </div>
-
-      <div class="form-group">
-        <label>Apellido</label>
-        <input
-          v-model="form.apellido"
-          type="text"
-          placeholder="Ej: González"
-          :class="{ 'input-error': errors.apellido }"
-          @input="errors.apellido = ''"
-        />
-        <span class="field-error" v-if="errors.apellido">{{ errors.apellido }}</span>
-      </div>
-
-      <div class="form-group">
-        <label>Email</label>
-        <input
-          v-model="form.email"
-          type="email"
-          placeholder="usuario@correo.com"
-          :class="{ 'input-error': errors.email }"
-          @input="errors.email = ''"
-        />
-        <span class="field-error" v-if="errors.email">{{ errors.email }}</span>
-      </div>
-
-      <div class="form-group">
-        <label>Contraseña</label>
-        <div class="input-pass-wrap">
-          <input
-            v-model="form.clave"
-            :type="showPass ? 'text' : 'password'"
-            placeholder="Mínimo 6 caracteres"
-            :class="{ 'input-error': errors.clave }"
-            @input="errors.clave = ''"
-          />
-          <button class="toggle-pass" @click="showPass = !showPass" type="button">
-            {{ showPass ? '🙈' : '👁' }}
-          </button>
-        </div>
-        <span class="field-error" v-if="errors.clave">{{ errors.clave }}</span>
-      </div>
-
-      <div class="form-group">
-        <label>Rol</label>
-        <select v-model="form.rol">
-          <option value="usuario">👤 Usuario</option>
-          <option value="admin">🛡️ Administrador</option>
-        </select>
-      </div>
-
-      <button class="btn-primary" @click="crearUsuario" :disabled="loading">
-        <span v-if="!loading">
-          <span class="btn-icon">+</span> Crear usuario
-        </span>
-        <span v-else class="spinner-sm"></span>
-      </button>
-    </aside>
-
-    <!-- Panel derecho: lista de usuarios -->
-    <section class="panel panel-list">
-      <div class="list-header">
-        <div>
-          <h2 class="panel-title">Directorio</h2>
-          <p class="panel-sub">Gestiona todos los usuarios registrados</p>
-        </div>
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input v-model="busqueda" type="text" placeholder="Buscar..." class="search-input"/>
-        </div>
-      </div>
-
-      <!-- Estado vacío -->
-      <div v-if="!loading && usuariosFiltrados.length === 0" class="empty-state">
-        <div class="empty-icon">◎</div>
-        <p>No hay usuarios que mostrar</p>
-        <span>Crea el primero usando el formulario</span>
-      </div>
-
-      <!-- Loader -->
-      <div v-if="loading && usuarios.length === 0" class="loading-state">
-        <div class="spinner"></div>
-        <p>Cargando usuarios...</p>
-      </div>
-
-      <!-- Cards grid -->
-      <div class="users-grid" v-if="!loading || usuarios.length > 0">
-        <div
-          v-for="(usuario, index) in usuariosFiltrados"
-          :key="usuario.id"
-          class="user-card"
-          :style="{ animationDelay: index * 60 + 'ms' }"
-        >
-          <div class="card-top">
-            <div class="avatar" :style="{ background: getColor(usuario.nombre) }">
-              {{ getInitials(usuario.nombre, usuario.apellido) }}
-            </div>
-            <div class="card-info">
-              <h3>{{ usuario.nombre }} {{ usuario.apellido }}</h3>
-              <span class="card-email">{{ usuario.email }}</span>
-            </div>
-            <span :class="['role-badge', usuario.rol === 'admin' ? 'role-admin' : 'role-user']">
-              {{ usuario.rol === 'admin' ? '🛡️ Admin' : '👤 Usuario' }}
-            </span>
+      <!-- Letra C - CREATE -->
+      <a href="create.html" target="_blank" class="letter-link" data-letter="C">
+        <div class="letter-box" data-color="cyan">
+          <div class="glitch-wrapper">
+            <span class="letter" data-text="C">C</span>
+            <span class="letter glitch-layer red" data-text="C">C</span>
+            <span class="letter glitch-layer cyan" data-text="C">C</span>
           </div>
-          <div class="card-bottom">
-            <span class="card-date" v-if="usuario.created_at">
-              🗓 {{ formatDate(usuario.created_at) }}
-            </span>
-            <span class="card-id">#{{ usuario.id }}</span>
-            <div class="card-actions">
-              <button class="btn-edit" @click="abrirEditar(usuario)" title="Editar">✎</button>
-              <button class="btn-delete" @click="confirmarEliminar(usuario)" title="Eliminar">✕</button>
-            </div>
+          <div class="letter-label">
+            <span class="label-action">CREATE</span>
+            <span class="label-desc">// new user</span>
           </div>
+          <div class="hover-info">
+            <div class="info-line">› INSERT INTO usuario</div>
+            <div class="info-line">› status: ready</div>
+          </div>
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
         </div>
+      </a>
+
+      <!-- Letra R - READ -->
+      <a href="read.html" target="_blank" class="letter-link" data-letter="R">
+        <div class="letter-box" data-color="magenta">
+          <div class="glitch-wrapper">
+            <span class="letter" data-text="R">R</span>
+            <span class="letter glitch-layer red" data-text="R">R</span>
+            <span class="letter glitch-layer cyan" data-text="R">R</span>
+          </div>
+          <div class="letter-label">
+            <span class="label-action">READ</span>
+            <span class="label-desc">// list all</span>
+          </div>
+          <div class="hover-info">
+            <div class="info-line">› SELECT * FROM usuario</div>
+            <div class="info-line">› status: ready</div>
+          </div>
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+      </a>
+
+      <!-- Letra U - UPDATE -->
+      <a href="update.html" target="_blank" class="letter-link" data-letter="U">
+        <div class="letter-box" data-color="yellow">
+          <div class="glitch-wrapper">
+            <span class="letter" data-text="U">U</span>
+            <span class="letter glitch-layer red" data-text="U">U</span>
+            <span class="letter glitch-layer cyan" data-text="U">U</span>
+          </div>
+          <div class="letter-label">
+            <span class="label-action">UPDATE</span>
+            <span class="label-desc">// edit user</span>
+          </div>
+          <div class="hover-info">
+            <div class="info-line">› UPDATE usuario SET</div>
+            <div class="info-line">› status: ready</div>
+          </div>
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+      </a>
+
+      <!-- Letra D - DELETE -->
+      <a href="delete.html" target="_blank" class="letter-link" data-letter="D">
+        <div class="letter-box" data-color="red">
+          <div class="glitch-wrapper">
+            <span class="letter" data-text="D">D</span>
+            <span class="letter glitch-layer red" data-text="D">D</span>
+            <span class="letter glitch-layer cyan" data-text="D">D</span>
+          </div>
+          <div class="letter-label">
+            <span class="label-action">DELETE</span>
+            <span class="label-desc">// remove</span>
+          </div>
+          <div class="hover-info">
+            <div class="info-line">› DELETE FROM usuario</div>
+            <div class="info-line">› status: ready</div>
+          </div>
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Pie con info técnica (solo FRAMEWORK es clickeable) -->
+    <div class="footer-info">
+      <div class="info-block clickable" onclick="abrirInfo()">
+        <span class="info-label">FRAMEWORK</span>
+        <span class="info-value">VUE.JS 3</span>
+        <span class="info-hint">click para leer historia</span>
       </div>
-    </section>
+      <div class="info-block">
+        <span class="info-label">BACKEND</span>
+        <span class="info-value">PHP / MYSQLI</span>
+      </div>
+      <div class="info-block">
+        <span class="info-label">DATABASE</span>
+        <span class="info-value">MYSQL</span>
+      </div>
+      <div class="info-block">
+        <span class="info-label">VERSION</span>
+        <span class="info-value">v1.0.0</span>
+      </div>
+    </div>
+
   </main>
 
-  <!-- Modal Editar -->
-  <transition name="modal">
-    <div class="modal-overlay" v-if="showEditModal" @click.self="showEditModal = false">
-      <div class="modal-box">
-        <button class="modal-close" @click="showEditModal = false">✕</button>
-        <h3 class="modal-title">Editar usuario</h3>
-        <p class="modal-sub">Modifica los datos del usuario #{{ editForm.id }}</p>
+  <!-- Esquinas decorativas pantalla -->
+  <div class="screen-corner sc-tl"></div>
+  <div class="screen-corner sc-tr"></div>
+  <div class="screen-corner sc-bl"></div>
+  <div class="screen-corner sc-br"></div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre</label>
-            <input v-model="editForm.nombre" type="text" placeholder="Nombre"/>
-          </div>
-          <div class="form-group">
-            <label>Apellido</label>
-            <input v-model="editForm.apellido" type="text" placeholder="Apellido"/>
-          </div>
-        </div>
+  <!-- ============================
+       MODAL DE INFORMACIÓN VUE
+       ============================ -->
+  <div class="info-modal-overlay" id="infoModal">
+    <div class="info-modal-box">
+      <button class="info-modal-close" onclick="cerrarInfo()">× CERRAR</button>
 
-        <div class="form-group">
-          <label>Email</label>
-          <input v-model="editForm.email" type="email" placeholder="Email"/>
-        </div>
+      <div class="info-modal-body">
+  <p><strong>¿Qué es Vue.js?</strong></p>
+  <p>Según su documentación oficial, Vue.js es un framework progresivo de JavaScript para construir interfaces de usuario, que puede adoptarse de forma incremental [1]. Fue creado por Evan You y lanzado públicamente en febrero de 2014 [2].</p>
 
-        <div class="form-group">
-          <label>Nueva contraseña <span class="optional">(opcional)</span></label>
-          <input v-model="editForm.clave" type="password" placeholder="Dejar vacío para no cambiar"/>
-        </div>
+  <p><strong>¿Por qué se eligió para este proyecto?</strong></p>
+  <p>De acuerdo con la documentación oficial, Vue se destaca por tener una curva de aprendizaje accesible y por poder integrarse mediante un CDN sin necesidad de herramientas de compilación [1]. Estas características lo hacían adecuado para un proyecto académico con tiempo limitado.</p>
 
-        <div class="form-group">
-          <label>Rol</label>
-          <select v-model="editForm.rol">
-            <option value="usuario">👤 Usuario</option>
-            <option value="admin">🛡️ Administrador</option>
-          </select>
-        </div>
+  <p><strong>¿Cómo se utilizó en este proyecto?</strong></p>
+  <p>Vue.js se implementó en las cuatro ventanas del CRUD (create, read, update y delete) aplicando los siguientes conceptos:</p>
+  <ul>
+    <li>Vinculación de datos con <code>v-model</code> en los formularios</li>
+    <li>Renderizado de listas con <code>v-for</code> en las tablas</li>
+    <li>Condicionales con <code>v-if</code> para vistas y modales</li>
+    <li><code>computed</code> properties para el buscador en tiempo real</li>
+    <li>Manejo de eventos con <code>@click</code> y <code>@submit</code></li>
+    <li>Hook <code>mounted()</code> para cargar datos al iniciar</li>
+  </ul>
 
-        <div class="modal-footer">
-          <button class="btn-ghost" @click="showEditModal = false">Cancelar</button>
-          <button class="btn-primary" @click="actualizarUsuario" :disabled="loadingEdit">
-            <span v-if="!loadingEdit">Guardar cambios</span>
-            <span v-else class="spinner-sm"></span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </transition>
-
-  <!-- Modal Confirmar Eliminar -->
-  <transition name="modal">
-    <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
-      <div class="modal-box modal-confirm">
-        <div class="confirm-icon">⚠</div>
-        <h3 class="modal-title">¿Eliminar usuario?</h3>
-        <p class="modal-sub">
-          Estás por eliminar a <strong>{{ usuarioAEliminar?.nombre }} {{ usuarioAEliminar?.apellido }}</strong>.
-          Esta acción no se puede deshacer.
-        </p>
-        <div class="modal-footer">
-          <button class="btn-ghost" @click="showModal = false">Cancelar</button>
-          <button class="btn-danger" @click="eliminarUsuario" :disabled="loadingDelete">
-            <span v-if="!loadingDelete">Sí, eliminar</span>
-            <span v-else class="spinner-sm"></span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </transition>
-
+  <p><strong>Referencias:</strong></p>
+  <div class="referencias">
+    <p>[1] Vue.js. <em>Introducción</em>. Documentación oficial. Disponible en: <a href="https://vuejs.org/guide/introduction.html" target="_blank">vuejs.org/guide/introduction</a></p>
+    <p>[2] You, E. (2014). <em>Vue.js: A JavaScript Framework</em>. GitHub Repository. Disponible en: <a href="https://github.com/vuejs/vue" target="_blank">github.com/vuejs/vue</a></p>
+    <p>[3] Mozilla Developer Network. <em>Vue: Getting Started</em>. Disponible en: <a href="https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_getting_started" target="_blank">developer.mozilla.org</a></p>
+  </div>
 </div>
 
-<script src="app.js"></script>
+     
+
+  <script>
+    // Flash al hacer click en una letra
+    document.querySelectorAll('.letter-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        document.body.classList.add('flash');
+        setTimeout(() => document.body.classList.remove('flash'), 200);
+      });
+    });
+
+    // Texto que se "tipea" en el header
+    const typingText = "initiating database panel...";
+    let charIndex = 0;
+    const typingEl = document.querySelector('.typing');
+    if (typingEl) {
+      typingEl.textContent = '';
+      const typeInterval = setInterval(() => {
+        if (charIndex < typingText.length) {
+          typingEl.textContent += typingText[charIndex];
+          charIndex++;
+        } else {
+          clearInterval(typeInterval);
+        }
+      }, 60);
+    }
+
+    // Modal info: abrir y cerrar
+    function abrirInfo() {
+      document.getElementById('infoModal').classList.add('active');
+    }
+    function cerrarInfo() {
+      document.getElementById('infoModal').classList.remove('active');
+    }
+    // Cerrar modal al hacer clic en el fondo oscuro
+    document.getElementById('infoModal').addEventListener('click', function(e) {
+      if (e.target.id === 'infoModal') cerrarInfo();
+    });
+    // Cerrar con tecla ESC
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') cerrarInfo();
+    });
+  </script>
+
 </body>
 </html>

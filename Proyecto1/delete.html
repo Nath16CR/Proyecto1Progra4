@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DELETE // CRUD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="pages.css"/>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- Encabezado -->
+    <header class="page-header">
+      <button class="btn-back" onclick="window.close()">← Cerrar</button>
+      <h1 class="page-title"><span class="letter-d">D</span>ELETE</h1>
+      <span class="page-info">Eliminar usuarios</span>
+    </header>
+
+    <!-- Notificación -->
+    <div v-if="mensaje" :class="['toast', tipoMensaje]">
+      {{ mensaje }}
+    </div>
+
+    <!-- Tabla de usuarios -->
+    <main class="container-tabla">
+      <div class="tabla-header">
+        <h2>Selecciona un usuario para eliminar</h2>
+        <input
+          type="text"
+          class="buscador"
+          v-model="busqueda"
+          placeholder="Buscar..."
+        />
+      </div>
+
+      <div v-if="cargando" class="vacio">Cargando...</div>
+      <div v-else-if="usuariosFiltrados.length === 0" class="vacio">
+        No se encontraron usuarios
+      </div>
+
+      <table v-else class="tabla">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="usuario in usuariosFiltrados" :key="usuario.id">
+            <td>{{ usuario.id }}</td>
+            <td>{{ usuario.nombre }}</td>
+            <td>{{ usuario.apellido }}</td>
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.rol }}</td>
+            <td>
+              <button class="btn-accion eliminar" @click="confirmarEliminacion(usuario)">
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+
+    <!-- Modal de confirmación -->
+    <div v-if="mostrarModal" class="modal-overlay" @click.self="cancelarEliminacion">
+      <div class="modal">
+        <h3>¿Eliminar usuario?</h3>
+        <p>
+          QUE PACHO?? Estás a punto de eliminar a
+          <strong>{{ usuarioAEliminar.nombre }} {{ usuarioAEliminar.apellido }}</strong>.
+          <br><br>
+          OJITO QUE Esta acción no se puede deshacer R U SURE? .
+        </p>
+        <div class="modal-acciones">
+          <button class="btn-cancelar" @click="cancelarEliminacion">
+            Cancelar
+          </button>
+          <button class="btn-confirmar" @click="eliminarUsuario" :disabled="cargando">
+            {{ cargando ? 'Eliminando...' : 'Sí, eliminar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          // Lista de usuarios
+          usuarios: [],
+          busqueda: '',
+          // Estado de carga (mientras se hace la petición)
+          cargando: false,
+          // Controla si se muestra el modal de confirmación
+          mostrarModal: false,
+          // Guarda el usuario que se va a eliminar (para mostrar su nombre en el modal)
+          usuarioAEliminar: null,
+          // Mensaje de notificación
+          mensaje: '',
+          tipoMensaje: 'exito'
+        };
+      },
+
+      computed: {
+        // Filtrado por buscador
+        usuariosFiltrados() {
+          if (!this.busqueda.trim()) return this.usuarios;
+          const texto = this.busqueda.toLowerCase();
+          return this.usuarios.filter(u =>
+            u.nombre.toLowerCase().includes(texto) ||
+            u.apellido.toLowerCase().includes(texto) ||
+            u.email.toLowerCase().includes(texto)
+          );
+        }
+      },
+
+      methods: {
+        // Carga los usuarios desde el backend
+        async cargarUsuarios() {
+          this.cargando = true;
+          try {
+            const respuesta = await axios.get('consultar.php');
+            this.usuarios = respuesta.data;
+          } catch (error) {
+            this.notificar('Error al cargar usuarios', 'error');
+          }
+          this.cargando = false;
+        },
+
+        // Cuando le das clic a "Eliminar", abre el modal de confirmación
+        confirmarEliminacion(usuario) {
+          this.usuarioAEliminar = usuario;
+          this.mostrarModal = true;
+        },
+
+        // Cierra el modal sin eliminar
+        cancelarEliminacion() {
+          this.mostrarModal = false;
+          this.usuarioAEliminar = null;
+        },
+
+        notificar(texto, tipo) {
+          this.mensaje = texto;
+          this.tipoMensaje = tipo;
+          setTimeout(() => { this.mensaje = ''; }, 3000);
+        },
+
+        // Envía la petición al backend para eliminar
+        async eliminarUsuario() {
+          if (!this.usuarioAEliminar) return;
+
+          this.cargando = true;
+          try {
+            const datos = new FormData();
+            datos.append('id', this.usuarioAEliminar.id);
+
+            const respuesta = await axios.post('eliminar.php', datos);
+
+            if (respuesta.data.mensaje) {
+              this.notificar(respuesta.data.mensaje, 'exito');
+              // Cerramos el modal y recargamos la lista
+              this.mostrarModal = false;
+              this.usuarioAEliminar = null;
+              this.cargarUsuarios();
+            } else {
+              this.notificar(respuesta.data.error, 'error');
+            }
+          } catch (error) {
+            this.notificar('Error al conectar con el servidor', 'error');
+            console.error(error);
+          }
+          this.cargando = false;
+        }
+      },
+
+      mounted() {
+        this.cargarUsuarios();
+      }
+    }).mount('#app');
+  </script>
+
+</body>
+</html>

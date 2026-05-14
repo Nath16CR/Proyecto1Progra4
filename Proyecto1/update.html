@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UPDATE // CRUD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="pages.css"/>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- Encabezado -->
+    <header class="page-header">
+      <button class="btn-back" onclick="window.close()">← Cerrar</button>
+      <h1 class="page-title"><span class="letter-u">U</span>PDATE</h1>
+      <span class="page-info">Editar usuarios</span>
+    </header>
+
+    <!-- Notificación -->
+    <div v-if="mensaje" :class="['toast', tipoMensaje]">
+      {{ mensaje }}
+    </div>
+
+    <!-- VISTA 1: Tabla con lista de usuarios -->
+    <main v-if="!usuarioEditando" class="container-tabla">
+      <div class="tabla-header">
+        <h2>Selecciona un usuario para editar</h2>
+        <input
+          type="text"
+          class="buscador"
+          v-model="busqueda"
+          placeholder="Buscar..."
+        />
+      </div>
+
+      <div v-if="cargando" class="vacio">Cargando...</div>
+      <div v-else-if="usuariosFiltrados.length === 0" class="vacio">
+        No se encontraron usuarios
+      </div>
+
+      <table v-else class="tabla">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="usuario in usuariosFiltrados" :key="usuario.id">
+            <td>{{ usuario.id }}</td>
+            <td>{{ usuario.nombre }}</td>
+            <td>{{ usuario.apellido }}</td>
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.rol }}</td>
+            <td>
+              <button class="btn-accion editar" @click="seleccionarUsuario(usuario)">
+                Editar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+
+    <!-- VISTA 2: Formulario de edición -->
+    <main v-else class="container">
+      <form class="formulario" @submit.prevent="actualizarUsuario">
+        <h2>Editando usuario #{{ form.id }}</h2>
+
+        <div class="campo">
+          <label>Nombre</label>
+          <input type="text" v-model="form.nombre"/>
+          <span class="error" v-if="errores.nombre">{{ errores.nombre }}</span>
+        </div>
+
+        <div class="campo">
+          <label>Apellido</label>
+          <input type="text" v-model="form.apellido"/>
+          <span class="error" v-if="errores.apellido">{{ errores.apellido }}</span>
+        </div>
+
+        <div class="campo">
+          <label>Email</label>
+          <input type="email" v-model="form.email"/>
+          <span class="error" v-if="errores.email">{{ errores.email }}</span>
+        </div>
+
+        <div class="campo">
+          <label>Nueva contraseña (opcional)</label>
+          <input type="password" v-model="form.clave" placeholder="Dejar vacío para no cambiar"/>
+          <span class="error" v-if="errores.clave">{{ errores.clave }}</span>
+        </div>
+
+        <div class="campo">
+          <label>Rol</label>
+          <select v-model="form.rol">
+            <option value="usuario">Usuario</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <button type="button" class="btn-back" style="flex: 1; padding: 12px;" @click="cancelarEdicion">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-principal" style="margin: 0;" :disabled="cargando">
+            {{ cargando ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </form>
+    </main>
+
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          // Lista de usuarios traída del backend
+          usuarios: [],
+          // Texto de búsqueda
+          busqueda: '',
+          // Indica si hay un usuario siendo editado (cuando es true, muestra el formulario)
+          usuarioEditando: false,
+          // Datos del formulario de edición
+          form: {
+            id: null,
+            nombre: '',
+            apellido: '',
+            email: '',
+            clave: '',
+            rol: 'usuario'
+          },
+          errores: {},
+          cargando: false,
+          mensaje: '',
+          tipoMensaje: 'exito'
+        };
+      },
+
+      computed: {
+        // Filtra usuarios por el buscador
+        usuariosFiltrados() {
+          if (!this.busqueda.trim()) return this.usuarios;
+          const texto = this.busqueda.toLowerCase();
+          return this.usuarios.filter(u =>
+            u.nombre.toLowerCase().includes(texto) ||
+            u.apellido.toLowerCase().includes(texto) ||
+            u.email.toLowerCase().includes(texto)
+          );
+        }
+      },
+
+      methods: {
+        // Carga los usuarios desde el backend
+        async cargarUsuarios() {
+          this.cargando = true;
+          try {
+            const respuesta = await axios.get('consultar.php');
+            this.usuarios = respuesta.data;
+          } catch (error) {
+            this.notificar('Error al cargar usuarios', 'error');
+          }
+          this.cargando = false;
+        },
+
+        // Cuando seleccionás un usuario para editar, copiamos sus datos al formulario
+        seleccionarUsuario(usuario) {
+          this.form = {
+            id: usuario.id,
+            nombre: usuario.nombre,
+            apellido: usuario.apellido,
+            email: usuario.email,
+            clave: '', // La contraseña va vacía (solo se cambia si el usuario escribe una nueva)
+            rol: usuario.rol
+          };
+          this.errores = {};
+          this.usuarioEditando = true;
+        },
+
+        // Vuelve a la vista de tabla sin guardar
+        cancelarEdicion() {
+          this.usuarioEditando = false;
+          this.form = { id: null, nombre: '', apellido: '', email: '', clave: '', rol: 'usuario' };
+          this.errores = {};
+        },
+
+        // Valida los datos antes de enviar
+        validar() {
+          this.errores = {};
+          if (!this.form.nombre.trim()) this.errores.nombre = 'El nombre es obligatorio';
+          if (!this.form.apellido.trim()) this.errores.apellido = 'El apellido es obligatorio';
+          if (!this.form.email.trim()) this.errores.email = 'El email es obligatorio';
+          else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) {
+            this.errores.email = 'Formato de email inválido';
+          }
+          // La contraseña solo se valida si el usuario escribió algo
+          if (this.form.clave && this.form.clave.length < 6) {
+            this.errores.clave = 'Mínimo 6 caracteres';
+          }
+          return Object.keys(this.errores).length === 0;
+        },
+
+        notificar(texto, tipo) {
+          this.mensaje = texto;
+          this.tipoMensaje = tipo;
+          setTimeout(() => { this.mensaje = ''; }, 3000);
+        },
+
+        // Envía los cambios al backend
+        async actualizarUsuario() {
+          if (!this.validar()) return;
+
+          this.cargando = true;
+          try {
+            const datos = new FormData();
+            datos.append('id', this.form.id);
+            datos.append('nombre', this.form.nombre);
+            datos.append('apellido', this.form.apellido);
+            datos.append('email', this.form.email);
+            datos.append('rol', this.form.rol);
+            // Solo enviamos la contraseña si el usuario escribió una nueva
+            if (this.form.clave) {
+              datos.append('clave', this.form.clave);
+            }
+
+            const respuesta = await axios.post('actualizar.php', datos);
+
+            if (respuesta.data.mensaje) {
+              this.notificar(respuesta.data.mensaje, 'exito');
+              // Volvemos a la tabla y recargamos los datos
+              this.usuarioEditando = false;
+              this.cargarUsuarios();
+            } else {
+              this.notificar(respuesta.data.error, 'error');
+            }
+          } catch (error) {
+            this.notificar('Error al conectar con el servidor', 'error');
+            console.error(error);
+          }
+          this.cargando = false;
+        }
+      },
+
+      // Cargamos los usuarios cuando la página abre
+      mounted() {
+        this.cargarUsuarios();
+      }
+    }).mount('#app');
+  </script>
+
+</body>
+</html>

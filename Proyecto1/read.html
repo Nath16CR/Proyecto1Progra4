@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>READ // CRUD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="pages.css"/>
+  <!-- Vue 3 desde CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Axios para peticiones HTTP -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- Encabezado -->
+    <header class="page-header">
+      <button class="btn-back" onclick="window.close()">← Cerrar</button>
+      <h1 class="page-title"><span class="letter-r">R</span>EAD</h1>
+      <span class="page-info">Listar usuarios</span>
+    </header>
+
+    <!-- Contenido principal -->
+    <main class="container-tabla">
+
+      <!-- Encabezado de la tabla con buscador -->
+      <div class="tabla-header">
+        <h2>Usuarios registrados ({{ usuariosFiltrados.length }})</h2>
+        <input
+          type="text"
+          class="buscador"
+          v-model="busqueda"
+          placeholder="Buscar por nombre, email..."
+        />
+      </div>
+
+      <!-- Mostrar mensaje mientras carga -->
+      <div v-if="cargando" class="vacio">
+        Cargando usuarios...
+      </div>
+
+      <!-- Mensaje si no hay usuarios -->
+      <div v-else-if="usuariosFiltrados.length === 0" class="vacio">
+        No se encontraron usuarios
+      </div>
+
+      <!-- Tabla de usuarios -->
+      <table v-else class="tabla">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Fecha de registro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="usuario in usuariosFiltrados" :key="usuario.id">
+            <td>{{ usuario.id }}</td>
+            <td>{{ usuario.nombre }}</td>
+            <td>{{ usuario.apellido }}</td>
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.rol }}</td>
+            <td>{{ formatearFecha(usuario.created_at) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </main>
+
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          // Lista de usuarios que viene del backend
+          usuarios: [],
+          // Texto de búsqueda
+          busqueda: '',
+          // Estado de carga
+          cargando: true
+        };
+      },
+
+      // Computed: se recalcula automáticamente cuando cambia "busqueda" o "usuarios"
+      computed: {
+        // Filtra los usuarios según el texto del buscador
+        usuariosFiltrados() {
+          // Si el buscador está vacío, mostramos todos
+          if (!this.busqueda.trim()) {
+            return this.usuarios;
+          }
+          // Convertimos la búsqueda a minúsculas para comparar
+          const texto = this.busqueda.toLowerCase();
+          // Filtramos por nombre, apellido o email
+          return this.usuarios.filter(u =>
+            u.nombre.toLowerCase().includes(texto) ||
+            u.apellido.toLowerCase().includes(texto) ||
+            u.email.toLowerCase().includes(texto)
+          );
+        }
+      },
+
+      methods: {
+        // Trae los usuarios desde el backend PHP
+        async cargarUsuarios() {
+          this.cargando = true;
+          try {
+            // GET al archivo consultar.php
+            const respuesta = await axios.get('consultar.php');
+            this.usuarios = respuesta.data;
+          } catch (error) {
+            console.error('Error al cargar usuarios:', error);
+            alert('Error al conectar con el servidor');
+          }
+          this.cargando = false;
+        },
+
+        // Formatea la fecha para que se vea bonita
+        formatearFecha(fecha) {
+          if (!fecha) return '-';
+          const d = new Date(fecha);
+          return d.toLocaleDateString('es-CR') + ' ' + d.toLocaleTimeString('es-CR', {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+      },
+
+      // Se ejecuta cuando la página termina de cargar
+      mounted() {
+        this.cargarUsuarios();
+      }
+    }).mount('#app');
+  </script>
+
+</body>
+</html>

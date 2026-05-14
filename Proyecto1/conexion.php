@@ -1,8 +1,8 @@
 <?php
 // Datos de conexión a la base de datos
-$servidor = "localhost:3307";
+$servidor = "localhost:3306";
 $usuario = "root";
-$password = "51@Sqr9UgevyCjh"; // ← CORREGIDO: cerré la comilla
+$password = "root"; // ← CORREGIDO: cerré la comilla
 $basedatos = "proy_crud";
 
 // Crear conexión

@@ -1,0 +1,321 @@
+/* Estilos para las páginas CRUD (create, read, update, delete) */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0a0a18;
+  color: #e0e0ff;
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+}
+
+/* Encabezado de la página */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #1a1a30;
+  background: #0f0f20;
+}
+
+.btn-back {
+  background: transparent;
+  border: 1px solid #ff4477;
+  color: #ff4477;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  background: #ff4477;
+  color: #000;
+}
+
+.page-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.2em;
+  color: #e0e0ff;
+}
+
+/* Letras de color por sección */
+.letter-c { color: #00ffff; text-shadow: 0 0 10px #00ffff; }
+.letter-r { color: #ff00ff; text-shadow: 0 0 10px #ff00ff; }
+.letter-u { color: #ffee00; text-shadow: 0 0 10px #ffee00; }
+.letter-d { color: #ff0044; text-shadow: 0 0 10px #ff0044; }
+
+.page-info {
+  font-size: 0.85rem;
+  color: #6a6a8a;
+}
+
+/* Contenedor principal */
+.container {
+  max-width: 600px;
+  margin: 3rem auto;
+  padding: 0 2rem;
+}
+
+/* Formulario */
+.formulario {
+  background: #12122a;
+  padding: 2rem;
+  border: 1px solid #2a2a45;
+}
+
+.formulario h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  color: #00ffff;
+  letter-spacing: 0.15em;
+}
+
+.campo {
+  margin-bottom: 1.2rem;
+}
+
+.campo label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: #a0a0c0;
+}
+
+.campo input,
+.campo select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #0a0a18;
+  border: 1px solid #2a2a45;
+  color: #e0e0ff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.campo input:focus,
+.campo select:focus {
+  border-color: #00ffff;
+}
+
+.error {
+  display: block;
+  color: #ff0044;
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+/* Botón principal */
+.btn-principal {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 2px solid #00ffff;
+  color: #00ffff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 1rem;
+}
+
+.btn-principal:hover:not(:disabled) {
+  background: #00ffff;
+  color: #000;
+}
+
+.btn-principal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Notificación */
+.toast {
+  position: fixed;
+  top: 90px;
+  right: 2rem;
+  padding: 12px 20px;
+  border: 1px solid;
+  font-size: 0.9rem;
+  z-index: 100;
+}
+
+.toast.exito {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: #00ff88;
+  color: #00ff88;
+}
+
+.toast.error {
+  background: rgba(255, 0, 68, 0.1);
+  border-color: #ff0044;
+  color: #ff0044;
+}
+
+/* Tabla (para read, update, delete) */
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.tabla th,
+.tabla td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #2a2a45;
+}
+
+.tabla th {
+  background: #1a1a30;
+  color: #00ffff;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+}
+
+.tabla tbody tr:hover {
+  background: #1a1a30;
+}
+
+.btn-accion {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  background: transparent;
+  border: 1px solid;
+  cursor: pointer;
+  margin: 0 3px;
+  font-family: inherit;
+}
+
+.btn-accion.editar {
+  border-color: #ffee00;
+  color: #ffee00;
+}
+
+.btn-accion.editar:hover {
+  background: #ffee00;
+  color: #000;
+}
+
+.btn-accion.eliminar {
+  border-color: #ff0044;
+  color: #ff0044;
+}
+
+.btn-accion.eliminar:hover {
+  background: #ff0044;
+  color: #000;
+}
+
+/* Buscador */
+.buscador {
+  padding: 9px 14px;
+  background: #0a0a18;
+  border: 1px solid #2a2a45;
+  color: #e0e0ff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  width: 250px;
+  outline: none;
+}
+
+.buscador:focus {
+  border-color: #00ffff;
+}
+
+/* Contenedor de tabla */
+.container-tabla {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+.tabla-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Modal de confirmación (para delete) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: #12122a;
+  border: 1px solid #ff0044;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.modal h3 {
+  font-family: 'Orbitron', sans-serif;
+  color: #ff0044;
+  margin-bottom: 1rem;
+}
+
+.modal p {
+  margin-bottom: 1.5rem;
+  color: #a0a0c0;
+}
+
+.modal-acciones {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.modal-acciones button {
+  flex: 1;
+  padding: 10px;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid;
+  background: transparent;
+}
+
+.btn-cancelar {
+  border-color: #6a6a8a;
+  color: #a0a0c0;
+}
+
+.btn-cancelar:hover {
+  background: #6a6a8a;
+  color: #000;
+}
+
+.btn-confirmar {
+  border-color: #ff0044;
+  color: #ff0044;
+}
+
+.btn-confirmar:hover {
+  background: #ff0044;
+  color: #000;
+}
+
+.vacio {
+  text-align: center;
+  padding: 3rem;
+  color: #6a6a8a;
+}
